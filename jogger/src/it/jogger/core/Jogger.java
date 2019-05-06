@@ -23,7 +23,7 @@ public class Jogger {
 
 	/* singleton */
 	public static Jogger getInstance() {
-		return (jogger = (jogger == null) ? new Jogger() : jogger);
+		return jogger = jogger == null ? new Jogger() : jogger;
 	}
 
 	/* metodo che ritorna path della cartella log */
@@ -103,7 +103,7 @@ public class Jogger {
 		try {
 			raf = new RandomAccessFile(fLog, "rw");
 			raf.seek(raf.length());
-			raf.writeBytes("\n" + write);
+			raf.writeBytes(write + "\n");
 		} catch (IOException e) {
 			try {
 				raf.close();

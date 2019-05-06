@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Matcher;
@@ -24,7 +26,7 @@ public class JoggerDebug {
 
 	/* singleton */
 	public static JoggerDebug getInstance() {
-		return joggerDebug = (joggerDebug == null) ? new JoggerDebug() : joggerDebug;
+		return joggerDebug = joggerDebug == null ? new JoggerDebug() : joggerDebug;
 	}
 
 	/* metodo che ritorna path della cartella log */
@@ -97,7 +99,7 @@ public class JoggerDebug {
 		try {
 			raf = new RandomAccessFile(fLog, "rw");
 			raf.seek(raf.length());
-			raf.writeBytes("\n" + write);
+			raf.writeBytes(LocalDate.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write + "\n");
 		} catch (IOException e) {
 			try {
 				raf.close();
