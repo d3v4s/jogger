@@ -17,13 +17,23 @@ public class Jogger {
 	private final String FILE_TYPE = ".log";
 	private final int MAX_SIZE_BYTES = 51200;
 	protected static final String LOG_DIR_PATH = Paths.get(System.getProperty("user.dir"), "log").toString();
-	
+	private String nameLog;
+
+	/* costruttore */
 	private Jogger() {
 	}
 
 	/* singleton */
 	public static Jogger getInstance() {
 		return jogger = jogger == null ? new Jogger() : jogger;
+	}
+
+	/* get set */
+	public String getNameLog() {
+		return nameLog;
+	}
+	public void setNameLog(String nameLog) {
+		this.nameLog = nameLog;
 	}
 
 	/* metodo che ritorna path della cartella log */
@@ -33,6 +43,11 @@ public class Jogger {
 			pathDirLog = Paths.get(pathDirLog, dirLog).toString();
 		
 		return pathDirLog;
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
+		return getLogFile(nameLog, null, ".");
 	}
 	
 	/* metodo che ritorna il file di log su cui lavorare */
@@ -92,8 +107,18 @@ public class Jogger {
 	}
 
 	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFilePath(nameLog, null, ".");
+	}
+
+	/* metodo che ritorna path del file log da usare */
 	public String getLogFilePath(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
 		return getLogFile(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
+	}
+
+	/* metodo per scrivere sul file di log */
+	public void writeLog(String write) throws FileLogException {
+		writeLog(write, nameLog, null, ".");
 	}
 
 	/* metodo per scrivere sul file di log */

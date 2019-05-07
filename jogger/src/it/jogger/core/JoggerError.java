@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,8 +21,18 @@ public class JoggerError {
 	private final String FILE_TYPE = ".log";
 	private final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "error").toString();
 	private final int MAX_SIZE_BYTES = 51200;
-	
+	private String nameLog;
+
+	/* costruttore */
 	private JoggerError() {
+	}
+
+	/* get set */
+	public String getNameLog() {
+		return nameLog;
+	}
+	public void setNameLog(String nameLog) {
+		this.nameLog = nameLog;
 	}
 
 	/* singleton */
@@ -34,6 +43,11 @@ public class JoggerError {
 	/* metodo che ritorna la cartella dei log */
 	public String getLogDirPath() {
 		return LOG_DIR_PATH;
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
+		return getLogFile(nameLog, null);
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
@@ -90,13 +104,18 @@ public class JoggerError {
 	}
 
 	/* metodo per scrivere sul file di log un'eccezione */
+	public void writeLog(Exception exception) throws FileLogException {
+		writeLog(exception, nameLog, null);
+	}
+
+	/* metodo per scrivere sul file di log un'eccezione */
 	public void writeLog(Exception exception, String nameLog, Integer maxSizeBytes) throws FileLogException {
 		File fLog = getLogFile(nameLog, maxSizeBytes);
 		PrintWriter pwLog = null;
 		try {
 			String post = readLogFile(fLog);
 			pwLog = new PrintWriter(fLog);
-			pwLog.append("Date: " + LocalDate.now().format(DateTimeFormatter.ISO_DATE) + " - Time: " + LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)); 
+			pwLog.append("Date: " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)); 
 			pwLog.append(" -- Error message: " + exception.getMessage() + "\n\t");
 			exception.printStackTrace(pwLog);
 			pwLog.append("\n" + post);
@@ -107,6 +126,11 @@ public class JoggerError {
 		} finally {
 			pwLog.close();
 		}
+	}
+
+	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFilePath(nameLog, null);
 	}
 
 	/* metodo che ritorna path del file log da usare */
