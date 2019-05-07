@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +21,9 @@ public class JoggerDebug {
 	private final String FILE_TYPE = ".log";
 	private final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "debug").toString();
 	private final int MAX_SIZE_BYTES = 51200;
+	private String nameLog;
+	private ReentrantLock reentrantLock = new ReentrantLock();
+	private boolean lock = false;
 
 	private JoggerDebug() {
 		super();
@@ -29,9 +34,28 @@ public class JoggerDebug {
 		return joggerDebug = joggerDebug == null ? new JoggerDebug() : joggerDebug;
 	}
 
+	/* get e set */
+	public String getNameLog() {
+		return nameLog;
+	}
+	public void setNameLog(String nameLog) {
+		this.nameLog = nameLog;
+	}
+	public boolean isLock() {
+		return lock;
+	}
+	public void setLock(boolean lock) {
+		this.lock = lock;
+	}
+
 	/* metodo che ritorna path della cartella log */
 	public String getLogDirPath() {
 		return LOG_DIR_PATH;
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
+		return getLogFile(nameLog, null);
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
@@ -88,30 +112,53 @@ public class JoggerDebug {
 	}
 
 	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFilePath(nameLog, null);
+	}
+
+	/* metodo che ritorna path del file log da usare */
 	public String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
 		return getLogFile(nameLog, maxSizeBytes).getAbsolutePath();
 	}
 
 	/* metodo per scrivere sul file di log */
+	public void writeLog(String write) throws FileLogException {
+		writeLog(write, nameLog, null);
+	}
+
+	/* metodo per scrivere sul file di log */
 	public void writeLog(String write, String nameLog, Integer maxSizeBytes) throws FileLogException {
-		File fLog = getLogFile(nameLog, maxSizeBytes);
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(fLog, "rw");
-			raf.seek(raf.length());
-			raf.writeBytes(LocalDate.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write + "\n");
-		} catch (IOException e) {
-			try {
-				raf.close();
-			} catch (IOException e1) {
+		boolean complete = false;
+		while (!complete) {
+			if (lock) {
+				try {
+					if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) continue;
+				} catch (InterruptedException e) {
+				}
 			}
-			throw new FileLogException("Impossibile lavorare sul file log.\n"
-										+ "Message error: " + e.getMessage());
-		} finally {
+			File fLog = getLogFile(nameLog, maxSizeBytes);
+			RandomAccessFile raf = null;
+			String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
+			System.out.println(out);
 			try {
-				raf.close();
+				raf = new RandomAccessFile(fLog, "rw");
+				raf.seek(raf.length());
+				raf.writeBytes(out + "\n");
+				complete = true;
 			} catch (IOException e) {
+				try {
+					raf.close();
+				} catch (IOException e1) {
+				}
+				throw new FileLogException("Impossibile lavorare sul file log.\n"
+						+ "Message error: " + e.getMessage());
+			} finally {
+				try {
+					raf.close();
+				} catch (IOException e) {
+				}
 			}
+			
 		}
 	}
 }
