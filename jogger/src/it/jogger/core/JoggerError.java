@@ -10,48 +10,73 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.jogger.exception.FileLogException;
+import it.jogger.exception.LockLogException;
 
 public class JoggerError {
-	private static JoggerError joggerError;
 	private final String FILE_LOG = "log_error-";
 	private final String FILE_TYPE = ".log";
-	private final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "error").toString();
-	private final int MAX_SIZE_BYTES = 51200;
-	private String nameLog;
+	private static final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "error").toString();
+	private int maxSizeBytes = 51200;
+	private String nameLog = "jogger";
+	private boolean lock = false;
+	private final ReentrantLock reentrantLock = new ReentrantLock();
 
-	/* costruttore */
-	private JoggerError() {
+	/* costruttori */
+	public JoggerError() {
 	}
-
-	/* get set */
+	public JoggerError(String nameLog) {
+		this.nameLog = nameLog;
+	}
+	public JoggerError(String nameLog, Integer maxSizeBytes) {
+		this.nameLog = nameLog;
+		this.maxSizeBytes = maxSizeBytes;
+	}
+	
+	/* get e set */
 	public String getNameLog() {
 		return nameLog;
 	}
 	public void setNameLog(String nameLog) {
 		this.nameLog = nameLog;
 	}
-
-	/* singleton */
-	public static JoggerError getInstance() {
-		return (joggerError = (joggerError == null) ? new JoggerError() : joggerError);
+	public int getMaxSizeBytes() {
+		return maxSizeBytes;
+	}
+	public void setMaxSizeBytes(int maxSizeBytes) {
+		this.maxSizeBytes = maxSizeBytes;
+	}
+	public boolean isLock() {
+		return lock;
+	}
+	public void setLock(boolean lock) {
+		this.lock = lock;
 	}
 
 	/* metodo che ritorna la cartella dei log */
-	public String getLogDirPath() {
+	public static String getLogDirPath() {
 		return LOG_DIR_PATH;
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile() throws FileLogException {
-		return getLogFile(nameLog, null);
+	public static File getLogFile(String nameLog) throws FileLogException {
+		JoggerError joggerError = new JoggerError(nameLog);
+		return joggerError.getLogFile();
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile(String nameLog, Integer maxSizeBytes) throws FileLogException {
+	public static File getLogFile(String nameLog, Integer maxSizeBytes) throws FileLogException {
+		JoggerError joggerError = new JoggerError(nameLog, maxSizeBytes);
+		return joggerError.getLogFile();
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
 		File fileDirLog = new File(LOG_DIR_PATH);
 		File fileLog = null;
 		if (fileDirLog.exists() && fileDirLog.isFile())
@@ -83,7 +108,6 @@ public class JoggerError {
 			}
 
 			Long sizeLogByte = fileLog.length();
-			maxSizeBytes = (maxSizeBytes == null) ? MAX_SIZE_BYTES : maxSizeBytes;
 			if (sizeLogByte > maxSizeBytes) {
 				Matcher m = Pattern.compile(regex).matcher(listFileLog.get(0));
 				m.find();
@@ -99,17 +123,45 @@ public class JoggerError {
 				}
 			}
 		}
-		
+
 		return fileLog;
 	}
 
-	/* metodo per scrivere sul file di log un'eccezione */
-	public void writeLog(Exception exception) throws FileLogException {
-		writeLog(exception, nameLog, null);
+	/* metodo che ritorna path del file log da usare */
+	public static String getLogFilePath(String nameLog) throws FileLogException {
+		return getLogFile(nameLog).getAbsolutePath();
+	}
+
+	/* metodo che ritorna path del file log da usare */
+	public static String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
+		return getLogFile(nameLog, maxSizeBytes).getAbsolutePath();
+	}
+	
+	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFile().getAbsolutePath();
 	}
 
 	/* metodo per scrivere sul file di log un'eccezione */
-	public void writeLog(Exception exception, String nameLog, Integer maxSizeBytes) throws FileLogException {
+	public static void writeLog(Exception exception, String nameLog) throws FileLogException, LockLogException {
+		JoggerError joggerError = new JoggerError(nameLog);
+		joggerError.writeLog(exception);
+	}
+
+	/* metodo per scrivere sul file di log un'eccezione */
+	public static void writeLog(Exception exception, String nameLog, Integer maxSizeBytes) throws FileLogException, LockLogException {
+		JoggerError joggerError = new JoggerError(nameLog, maxSizeBytes);
+		joggerError.writeLog(exception);
+	}
+
+	/* metodo per scrivere sul file di log un'eccezione */
+	public void writeLog(Exception exception) throws FileLogException, LockLogException {
+		if (lock) {
+			try {
+				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+			} catch (InterruptedException e) {
+			}
+		}
 		File fLog = getLogFile(nameLog, maxSizeBytes);
 		PrintWriter pwLog = null;
 		try {
@@ -126,16 +178,6 @@ public class JoggerError {
 		} finally {
 			pwLog.close();
 		}
-	}
-
-	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath() throws FileLogException {
-		return getLogFilePath(nameLog, null);
-	}
-
-	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
-		return getLogFile(nameLog, maxSizeBytes).getAbsolutePath();
 	}
 
 	/* metodo che legge il file log e ritorna stringa */

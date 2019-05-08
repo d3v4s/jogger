@@ -6,26 +6,40 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.jogger.exception.FileLogException;
+import it.jogger.exception.LockLogException;
 
 public class Jogger {
-	private static Jogger jogger;
 	private final String FILE_LOG = "log_";
 	private final String FILE_TYPE = ".log";
-	private final int MAX_SIZE_BYTES = 51200;
 	protected static final String LOG_DIR_PATH = Paths.get(System.getProperty("user.dir"), "log").toString();
-	private String nameLog;
+	private int maxSizeBytes = 51200;
+	private String[] dirLogList = {"jogger"};
+	private String nameLog = "jogger";
+	private boolean lock = false;
+	private final ReentrantLock reentrantLock = new ReentrantLock();
 
-	/* costruttore */
-	private Jogger() {
+	/* costruttori */
+	public Jogger() {
 	}
-
-	/* singleton */
-	public static Jogger getInstance() {
-		return jogger = jogger == null ? new Jogger() : jogger;
+	public Jogger(String nameLog) {
+		this.nameLog = nameLog;
+	}
+	public Jogger(String nameLog, String... dirLogList) {
+		this.nameLog = nameLog;
+		if (dirLogList.length > 0)
+			this.dirLogList =  dirLogList;
+	}
+	public Jogger(String nameLog, Integer maxSizeBytes, String... dirLogList) {
+		this.nameLog = nameLog;
+		this.maxSizeBytes = maxSizeBytes;
+		if (dirLogList.length > 0)
+			this.dirLogList =  dirLogList;
 	}
 
 	/* get set */
@@ -35,24 +49,49 @@ public class Jogger {
 	public void setNameLog(String nameLog) {
 		this.nameLog = nameLog;
 	}
+	public int getMaxSizeBytes() {
+		return maxSizeBytes;
+	}
+	public void setMaxSizeBytes(int maxSizeBytes) {
+		this.maxSizeBytes = maxSizeBytes;
+	}
+	public String[] getDirLogList() {
+		return dirLogList;
+	}
+	public void setDirLogList(String[] dirLogList) {
+		this.dirLogList = dirLogList;
+	}
+	public boolean isLock() {
+		return lock;
+	}
+	public void setLock(boolean lock) {
+		this.lock = lock;
+	}
 
 	/* metodo che ritorna path della cartella log */
-	public String getLogDirPath(String... dirLog) {
+	public static String getLogDirPath(String... dirLog) {
 		String pathDirLog = LOG_DIR_PATH;
 		if (dirLog != null)
 			pathDirLog = Paths.get(pathDirLog, dirLog).toString();
 		
 		return pathDirLog;
 	}
-
+	
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile() throws FileLogException {
-		return getLogFile(nameLog, null, ".");
+	public static File getLogFile(String nameLog, String... dirLogList) throws FileLogException {
+		Jogger jogger = new Jogger(nameLog, dirLogList);
+		return jogger.getLogFile();
 	}
 	
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
-		String pathDirLog = getLogDirPath(dirLog);
+	public static File getLogFile(String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException {
+		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
+		return jogger.getLogFile();
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
+		String pathDirLog = getLogDirPath(dirLogList);
 		
 		File fileDirLog = new File(pathDirLog);
 		File fileLog = null;
@@ -86,7 +125,6 @@ public class Jogger {
 			}
 
 			Long sizeLogByte = fileLog.length();
-			maxSizeBytes = (maxSizeBytes == null) ? MAX_SIZE_BYTES : maxSizeBytes;
 			if (sizeLogByte > maxSizeBytes) {
 				Matcher m = Pattern.compile(regex).matcher(listFileLog.get(0));
 				m.find();
@@ -107,23 +145,41 @@ public class Jogger {
 	}
 
 	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath() throws FileLogException {
-		return getLogFilePath(nameLog, null, ".");
+	public static String getLogFilePath(String nameLog, String... dirLog) throws FileLogException {
+		return getLogFile(nameLog, dirLog).getAbsolutePath();
 	}
 
 	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
+	public static String getLogFilePath(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
 		return getLogFile(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
 	}
 
-	/* metodo per scrivere sul file di log */
-	public void writeLog(String write) throws FileLogException {
-		writeLog(write, nameLog, null, ".");
+	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFile().getAbsolutePath();
 	}
 
 	/* metodo per scrivere sul file di log */
-	public void writeLog(String write, String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
-		File fLog = getLogFile(nameLog, maxSizeBytes, dirLog);
+	public static void writeLog(String write, String nameLog, String... dirLogList) throws FileLogException, LockLogException {
+		Jogger jogger = new Jogger(nameLog, dirLogList);
+		jogger.writeLog(write);
+	}
+
+	/* metodo per scrivere sul file di log */
+	public static void writeLog(String write, String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException, LockLogException {
+		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
+		jogger.writeLog(write);
+	}
+
+	/* metodo per scrivere sul file di log */
+	public void writeLog(String write) throws FileLogException, LockLogException {
+		if (lock) {
+			try {
+				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+			} catch (InterruptedException e) {
+			}
+		}
+		File fLog = getLogFile(nameLog, maxSizeBytes, dirLogList);
 		RandomAccessFile raf = null;
 		try {
 			raf = new RandomAccessFile(fLog, "rw");
