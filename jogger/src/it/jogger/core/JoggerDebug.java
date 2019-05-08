@@ -14,24 +14,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import it.jogger.exception.FileLogException;
+import it.jogger.exception.LockLogException;
 
 public class JoggerDebug {
-	private static JoggerDebug joggerDebug;
 	private final String FILE_LOG = "log_debug-";
 	private final String FILE_TYPE = ".log";
-	private final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "debug").toString();
-	private final int MAX_SIZE_BYTES = 51200;
-	private String nameLog;
-	private ReentrantLock reentrantLock = new ReentrantLock();
+	private static final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "debug").toString();
+	private int maxSizeBytes = 51200;
+	private String nameLog = "jogger";
 	private boolean lock = false;
+	private final ReentrantLock reentrantLock = new ReentrantLock();
 
-	private JoggerDebug() {
-		super();
+	/* costruttori */
+	public JoggerDebug() {
 	}
-
-	/* singleton */
-	public static JoggerDebug getInstance() {
-		return joggerDebug = joggerDebug == null ? new JoggerDebug() : joggerDebug;
+	public JoggerDebug(String nameLog) {
+		this.nameLog = nameLog;
+	}
+	public JoggerDebug(String nameLog, Integer maxSizeBytes) {
+		this.nameLog = nameLog;
+		this.maxSizeBytes = maxSizeBytes;
 	}
 
 	/* get e set */
@@ -41,6 +43,12 @@ public class JoggerDebug {
 	public void setNameLog(String nameLog) {
 		this.nameLog = nameLog;
 	}
+	public int getMaxSizeBytes() {
+		return maxSizeBytes;
+	}
+	public void setMaxSizeBytes(int maxSizeBytes) {
+		this.maxSizeBytes = maxSizeBytes;
+	}
 	public boolean isLock() {
 		return lock;
 	}
@@ -49,17 +57,24 @@ public class JoggerDebug {
 	}
 
 	/* metodo che ritorna path della cartella log */
-	public String getLogDirPath() {
+	public static String getLogDirPath() {
 		return LOG_DIR_PATH;
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile() throws FileLogException {
-		return getLogFile(nameLog, null);
+	public static File getLogFile(String nameLog) throws FileLogException {
+		JoggerDebug joggerDebug = new JoggerDebug(nameLog);
+		return joggerDebug.getLogFile();
 	}
 
 	/* metodo che ritorna il file di log su cui lavorare */
-	public File getLogFile(String nameLog, Integer maxSizeBytes) throws FileLogException {
+	public static File getLogFile(String nameLog, Integer maxSizeBytes) throws FileLogException {
+		JoggerDebug joggerDebug = new JoggerDebug(nameLog, maxSizeBytes);
+		return joggerDebug.getLogFile();
+	}
+
+	/* metodo che ritorna il file di log su cui lavorare */
+	public File getLogFile() throws FileLogException {
 		File fileDirLog = new File(LOG_DIR_PATH);
 		File fileLog = null;
 		if (fileDirLog.exists() && fileDirLog.isFile())
@@ -92,7 +107,6 @@ public class JoggerDebug {
 			}
 
 			Long sizeLogByte = fileLog.length();
-			maxSizeBytes = (maxSizeBytes == null) ? MAX_SIZE_BYTES : maxSizeBytes;
 			if (sizeLogByte > maxSizeBytes) {
 				Matcher m = Pattern.compile(regex).matcher(listFileLog.get(0));
 				m.find();
@@ -112,53 +126,60 @@ public class JoggerDebug {
 	}
 
 	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath() throws FileLogException {
-		return getLogFilePath(nameLog, null);
+	public static String getLogFilePath(String nameLog) throws FileLogException {
+		return getLogFile(nameLog).getAbsolutePath();
 	}
 
 	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
+	public static String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
 		return getLogFile(nameLog, maxSizeBytes).getAbsolutePath();
 	}
 
-	/* metodo per scrivere sul file di log */
-	public void writeLog(String write) throws FileLogException {
-		writeLog(write, nameLog, null);
+	/* metodo che ritorna path del file log da usare */
+	public String getLogFilePath() throws FileLogException {
+		return getLogFile().getAbsolutePath();
 	}
 
 	/* metodo per scrivere sul file di log */
-	public void writeLog(String write, String nameLog, Integer maxSizeBytes) throws FileLogException {
-		boolean complete = false;
-		while (!complete) {
-			if (lock) {
-				try {
-					if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) continue;
-				} catch (InterruptedException e) {
-				}
-			}
-			File fLog = getLogFile(nameLog, maxSizeBytes);
-			RandomAccessFile raf = null;
-			String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
-			System.out.println(out);
+	public static void writeLog(String write, String nameLog) throws FileLogException, LockLogException {
+		JoggerDebug joggerDebug = new JoggerDebug(nameLog);
+		joggerDebug.writeLog(write);
+	}
+
+	/* metodo per scrivere sul file di log */
+	public static void writeLog(String write, String nameLog, Integer maxSizeBytes) throws FileLogException, LockLogException {
+		JoggerDebug joggerDebug = new JoggerDebug(nameLog, maxSizeBytes);
+		joggerDebug.writeLog(write);
+	}
+
+	/* metodo per scrivere sul file di log */
+	public void writeLog(String write) throws FileLogException, LockLogException {
+		if (lock) {
 			try {
-				raf = new RandomAccessFile(fLog, "rw");
-				raf.seek(raf.length());
-				raf.writeBytes(out + "\n");
-				complete = true;
-			} catch (IOException e) {
-				try {
-					raf.close();
-				} catch (IOException e1) {
-				}
-				throw new FileLogException("Impossibile lavorare sul file log.\n"
-						+ "Message error: " + e.getMessage());
-			} finally {
-				try {
-					raf.close();
-				} catch (IOException e) {
-				}
+				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+			} catch (InterruptedException e) {
 			}
-			
+		}
+		File fLog = getLogFile(nameLog, maxSizeBytes);
+		RandomAccessFile raf = null;
+		String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
+		System.out.println(out);
+		try {
+			raf = new RandomAccessFile(fLog, "rw");
+			raf.seek(raf.length());
+			raf.writeBytes(out + "\n");
+		} catch (IOException e) {
+			try {
+				raf.close();
+			} catch (IOException e1) {
+			}
+			throw new FileLogException("Impossibile lavorare sul file log.\n"
+					+ "Message error: " + e.getMessage());
+		} finally {
+			try {
+				raf.close();
+			} catch (IOException e) {
+			}
 		}
 	}
 }
