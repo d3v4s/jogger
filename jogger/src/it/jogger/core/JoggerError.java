@@ -160,6 +160,7 @@ public class JoggerError {
 			try {
 				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
 			} catch (InterruptedException e) {
+				return;
 			}
 		}
 		File fLog = getLogFile(nameLog, maxSizeBytes);
@@ -177,6 +178,7 @@ public class JoggerError {
 										+ "Message error: " + e.getMessage());
 		} finally {
 			pwLog.close();
+			if (lock) reentrantLock.unlock();
 		}
 	}
 

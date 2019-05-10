@@ -177,6 +177,7 @@ public class Jogger {
 			try {
 				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
 			} catch (InterruptedException e) {
+				return;
 			}
 		}
 		File fLog = getLogFile(nameLog, maxSizeBytes, dirLogList);
@@ -197,6 +198,7 @@ public class Jogger {
 				raf.close();
 			} catch (IOException e) {
 			}
+			if (lock) reentrantLock.unlock();
 		}
 	}
 }
