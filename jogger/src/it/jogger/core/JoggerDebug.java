@@ -158,6 +158,7 @@ public class JoggerDebug {
 			try {
 				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
 			} catch (InterruptedException e) {
+				return;
 			}
 		}
 		File fLog = getLogFile(nameLog, maxSizeBytes);
@@ -180,6 +181,7 @@ public class JoggerDebug {
 				raf.close();
 			} catch (IOException e) {
 			}
+			if (lock) reentrantLock.unlock();
 		}
 	}
 }
