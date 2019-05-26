@@ -100,9 +100,9 @@ public class Jogger {
 		else if (!fileDirLog.exists())
 			fileDirLog.mkdirs();
 
-		nameLog = FILE_LOG + nameLog + "-";
+		String fileNameLog = FILE_LOG + nameLog + "-";
 		if (fileDirLog.isDirectory()) {
-			String regex = nameLog + "([\\d]{6})" + FILE_TYPE;
+			String regex = fileNameLog + "([\\d]{6})" + FILE_TYPE;
 			ArrayList<String> listFileLog = new ArrayList<String>();
 			String[] lfl = fileDirLog.list();
 			for (String fname : lfl)
@@ -110,7 +110,7 @@ public class Jogger {
 						listFileLog.add(fname);
 
 			if (listFileLog.isEmpty()) {
-				fileLog = Paths.get(pathDirLog, nameLog + "000000" + FILE_TYPE).toFile();
+				fileLog = Paths.get(pathDirLog, fileNameLog + "000000" + FILE_TYPE).toFile();
 				try {
 					if (!fileLog.createNewFile())
 						throw new FileLogException("Impossibile lavorare sul file log, controllare i permessi");
@@ -130,7 +130,7 @@ public class Jogger {
 				m.find();
 				String nLog = String.format("%06d", Integer.valueOf(m.group(1)) + 1);
 				
-				fileLog = Paths.get(pathDirLog, nameLog + nLog + FILE_TYPE).toFile();
+				fileLog = Paths.get(pathDirLog, fileNameLog + nLog + FILE_TYPE).toFile();
 				try {
 					if (!fileLog.createNewFile())
 						throw new FileLogException("Impossibile lavorare sul file log, controllare i permessi.");
@@ -180,7 +180,7 @@ public class Jogger {
 				return;
 			}
 		}
-		File fLog = getLogFile(nameLog, maxSizeBytes, dirLogList);
+		File fLog = getLogFile();
 		RandomAccessFile raf = null;
 		try {
 			raf = new RandomAccessFile(fLog, "rw");
