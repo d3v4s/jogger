@@ -1,5 +1,10 @@
 package it.jogger.exception;
 
+/**
+ * Class for lock log exception
+ * @author Andrea Serra
+ *
+ */
 public class LockLogException extends Exception {
 	private static final long serialVersionUID = -5186996946749733063L;
 

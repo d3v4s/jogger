@@ -1,5 +1,10 @@
 package it.jogger.exception;
 
+/**
+ * Class for file log exception
+ * @author Andrea Serra
+ *
+ */
 public class FileLogException extends java.lang.Exception {
 	private static final long serialVersionUID = -6001453549907088936L;
 
