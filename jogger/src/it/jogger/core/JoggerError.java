@@ -8,157 +8,86 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import it.jogger.exception.FileLogException;
 import it.jogger.exception.LockLogException;
 
-public class JoggerError {
-	public static final String LOG_DIR_PATH = Paths.get(Jogger.LOG_DIR_PATH, "error").toString();
-	private final String FILE_LOG = "log_error-";
-	private final String FILE_TYPE = ".log";
-	private int maxSizeBytes = 51200;
-	private String nameLog = "jogger";
-	private boolean lock = false;
-	private final ReentrantLock reentrantLock = new ReentrantLock();
+/**
+ * This class implements a simple system for log errror of application
+ * @author Andrea Serra
+ *
+ */
+public class JoggerError extends JoggerAbstract {
+	private String logDirPathError = Paths.get(Jogger.logDirPath, "error").toString();
+	private String prefixFileLog = "log_error-";
 
-	/* costruttori */
+	/* ################################################################################# */
+	/* START CONSTRUCTORS */
+	/* ################################################################################# */
+
 	public JoggerError() {
 	}
+
+	/**
+	 * constructor that set the log file name
+	 * @param nameLog for log file
+	 */
 	public JoggerError(String nameLog) {
 		this.nameLog = nameLog;
 	}
+
+	/**
+	 * constructor that set log file name and the max size of file in bytes
+	 * @param nameLog for log file
+	 * @param maxSizeBytes of log file
+	 */
 	public JoggerError(String nameLog, Integer maxSizeBytes) {
 		this.nameLog = nameLog;
 		this.maxSizeBytes = maxSizeBytes;
 	}
-	
-	/* get e set */
-	public String getNameLog() {
-		return nameLog;
+
+	/* ################################################################################# */
+	/* END CONSTRUCTORS */
+	/* ################################################################################# */
+
+	/* ################################################################################# */
+	/* START GET AND SET */
+	/* ################################################################################# */
+
+	public String getLogDirPathError() {
+		return logDirPathError;
 	}
-	public void setNameLog(String nameLog) {
-		this.nameLog = nameLog;
-	}
-	public int getMaxSizeBytes() {
-		return maxSizeBytes;
-	}
-	public void setMaxSizeBytes(int maxSizeBytes) {
-		this.maxSizeBytes = maxSizeBytes;
-	}
-	public boolean isLock() {
-		return lock;
-	}
-	public void setLock(boolean lock) {
-		this.lock = lock;
+	public void setLogDirPathError(String logDirPathError) {
+		this.logDirPathError = logDirPathError;
 	}
 
-//	/* metodo che ritorna la cartella dei log */
-//	public static String getLogDirPath() {
-//		return LOG_DIR_PATH;
-//	}
-
-//	/* metodo che ritorna il file di log su cui lavorare */
-//	public static File getLogFile(String nameLog) throws FileLogException {
-//		JoggerError joggerError = new JoggerError(nameLog);
-//		return joggerError.getLogFile();
-//	}
-//
-//	/* metodo che ritorna il file di log su cui lavorare */
-//	public static File getLogFile(String nameLog, Integer maxSizeBytes) throws FileLogException {
-//		JoggerError joggerError = new JoggerError(nameLog, maxSizeBytes);
-//		return joggerError.getLogFile();
-//	}
+	/* ################################################################################# */
+	/* END GET AND SET */
+	/* ################################################################################# */
 
 	/* metodo che ritorna il file di log su cui lavorare */
+	/**
+	 * method that return a log file to work on
+	 * @return log file
+	 * @throws FileLogException
+	 */
 	public File getLogFile() throws FileLogException {
-		File fileDirLog = new File(LOG_DIR_PATH);
-		File fileLog = null;
-		if (fileDirLog.exists() && fileDirLog.isFile())
-			throw new FileLogException("Impossibile lavorare sulla cartella 'log', controllare i permessi o che non ci sia un file con lo stesso nome.");
-		else if (!fileDirLog.exists())
-			fileDirLog.mkdirs();
-		 String fileNameLog = FILE_LOG + nameLog + "-";
-		if (fileDirLog.isDirectory()) {
-			String regex = fileNameLog + "([\\d]{6})" + FILE_TYPE;
-			ArrayList<String> listFileLog = new ArrayList<String>();
-			String[] lfl = fileDirLog.list();
-			for (String fname : lfl)
-				if (Pattern.matches(regex, fname))
-						listFileLog.add(fname);
-
-			if (listFileLog.isEmpty()) {
-				fileLog = Paths.get(LOG_DIR_PATH, fileNameLog + "000000" + FILE_TYPE).toFile();
-				try {
-					if (!fileLog.createNewFile())
-						throw new FileLogException("Impossibile lavorare sul file log, controllare i permessi.");
-				} catch (IOException e) {
-					throw new FileLogException("Impossibile lavorare sul file log.\n"
-												+ "Message error: " + e.getMessage());
-				}
-			} else {
-				Collections.sort(listFileLog);
-				Collections.reverse(listFileLog);
-				fileLog = Paths.get(LOG_DIR_PATH, listFileLog.get(0)).toFile();
-			}
-
-			Long sizeLogByte = fileLog.length();
-			if (sizeLogByte > maxSizeBytes) {
-				Matcher m = Pattern.compile(regex).matcher(listFileLog.get(0));
-				m.find();
-				String nLog = String.format("%06d", Integer.valueOf(m.group(1)) + 1);
-				
-				fileLog = Paths.get(LOG_DIR_PATH, fileNameLog + nLog + FILE_TYPE).toFile();
-				try {
-					if (!fileLog.createNewFile())
-						throw new FileLogException("Impossibile lavorare sul file log, controllare i permessi.");
-				} catch (IOException e) {
-					throw new FileLogException("Impossibile lavorare sul file log.\n"
-												+ "Message error: " + e.getMessage());
-				}
-			}
-		}
-
-		return fileLog;
+		setPrefixFileLog(prefixFileLog);
+		return getFile(logDirPathError);
 	}
-
-//	/* metodo che ritorna path del file log da usare */
-//	public static String getLogFilePath(String nameLog) throws FileLogException {
-//		return getLogFile(nameLog).getAbsolutePath();
-//	}
-//
-//	/* metodo che ritorna path del file log da usare */
-//	public static String getLogFilePath(String nameLog, Integer maxSizeBytes) throws FileLogException {
-//		return getLogFile(nameLog, maxSizeBytes).getAbsolutePath();
-//	}
-	
-	/* metodo che ritorna path del file log da usare */
-	public String getLogFilePath() throws FileLogException {
-		return getLogFile().getAbsolutePath();
-	}
-
-//	/* metodo per scrivere sul file di log un'eccezione */
-//	public static void writeLog(Exception exception, String nameLog) throws FileLogException, LockLogException {
-//		JoggerError joggerError = new JoggerError(nameLog);
-//		joggerError.writeLog(exception);
-//	}
-//
-//	/* metodo per scrivere sul file di log un'eccezione */
-//	public static void writeLog(Exception exception, String nameLog, Integer maxSizeBytes) throws FileLogException, LockLogException {
-//		JoggerError joggerError = new JoggerError(nameLog, maxSizeBytes);
-//		joggerError.writeLog(exception);
-//	}
 
 	/* metodo per scrivere sul file di log un'eccezione */
+	/**
+	 * method that write to the log file
+	 * @param write string to be written
+	 * @throws FileLogException
+	 * @throws LockLogException
+	 */
 	public void writeLog(Exception exception) throws FileLogException, LockLogException {
 		if (lock) {
 			try {
-				if (!reentrantLock.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+				if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
 			} catch (InterruptedException e) {
 				return;
 			}
@@ -178,19 +107,24 @@ public class JoggerError {
 										+ "Message error: " + e.getMessage());
 		} finally {
 			pwLog.close();
-			if (lock) reentrantLock.unlock();
+			if (lock) REENTRANT_LOCK.unlock();
 		}
 	}
 
 	/* metodo che legge il file log e ritorna stringa */
+	/**
+	 * method that get a string with content of log file
+	 * @param file to be read
+	 * @return string with content of log file
+	 * @throws FileLogException
+	 */
 	private String readLogFile(File file) throws FileLogException {
 		StringBuffer textOut = new StringBuffer();
 		RandomAccessFile raf = null;
 		try {
 			raf = new RandomAccessFile(file, "r");
 			raf.seek(0);
-			while(raf.getFilePointer() < raf.length())
-				textOut = textOut.append(raf.readLine() + (raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
+			while(raf.getFilePointer() < raf.length()) textOut = textOut.append(raf.readLine() + (raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
 		} catch (IOException e) {
 			try {
 				raf.close();
