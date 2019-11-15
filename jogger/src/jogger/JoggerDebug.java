@@ -1,4 +1,4 @@
-package it.jogger.core;
+package jogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
-import it.jogger.exception.FileLogException;
-import it.jogger.exception.LockLogException;
+import exception.FileLogException;
+import exception.LockLogException;
 
 /**
  * This class implements a simple system for debugging an application
@@ -20,16 +20,6 @@ public class JoggerDebug extends JoggerAbstract {
 	private String logDirPathDebug = Paths.get(logDirPath, "debug").toString();
 	private String prefixFileLog = "log_debug-";
 	private boolean debug = true;
-
-	public static void main(String[] args) {
-		JoggerDebug jd = new JoggerDebug();
-		try {
-			jd.writeLog("dio cane");
-		} catch (FileLogException | LockLogException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
@@ -122,8 +112,7 @@ public class JoggerDebug extends JoggerAbstract {
 					raf.close();
 				} catch (IOException e1) {
 				}
-				throw new FileLogException("Unable to work on log file.\n"
-						+ "Error message:" + e.getMessage());
+				throw new FileLogException("Unable to work on log file.\nError message:" + e.getMessage());
 			} finally {
 				try {
 					raf.close();

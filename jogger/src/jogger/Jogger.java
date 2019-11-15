@@ -1,4 +1,4 @@
-package it.jogger.core;
+package jogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,8 +6,8 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
-import it.jogger.exception.FileLogException;
-import it.jogger.exception.LockLogException;
+import exception.FileLogException;
+import exception.LockLogException;
 
 /**
  * This class implements a simple system to manage the logs of an application
@@ -202,8 +202,7 @@ public class Jogger extends JoggerAbstract {
 				raf.close();
 			} catch (IOException e1) {
 			}
-			throw new FileLogException("Unable to work on log file.\n"
-										+ "Error message: " + e.getMessage());
+			throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
 		} finally {
 			try {
 				raf.close();

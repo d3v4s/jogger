@@ -1,4 +1,4 @@
-package it.jogger.exception;
+package exception;
 
 /**
  * Class for lock log exception

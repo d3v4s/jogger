@@ -1,4 +1,4 @@
-package it.jogger.core;
+package jogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import it.jogger.exception.FileLogException;
+import exception.FileLogException;
 
 /**
  * Abstract class for Jogger (Java logger)
@@ -105,8 +105,7 @@ public abstract class JoggerAbstract {
 				try {
 					if (!fileLog.createNewFile()) throw new FileLogException("Unable to work on log file, check permissions.");
 				} catch (IOException e) {
-					throw new FileLogException("Unable to work on log file.\n"
-												+ "Error message: " + e.getMessage());
+					throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
 				}
 			} else {
 				Collections.sort(listFileLog);
@@ -124,8 +123,7 @@ public abstract class JoggerAbstract {
 				try {
 					if (!fileLog.createNewFile()) throw new FileLogException("Unable to work on log file, check permissions.");
 				} catch (IOException e) {
-					throw new FileLogException("Unable to work on log file.\n"
-												+ "Error message: " + e.getMessage());
+					throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
 				}
 			}
 		} else throw new FileLogException("Unable to work on log directory, check permissions.");

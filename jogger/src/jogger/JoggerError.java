@@ -1,4 +1,4 @@
-package it.jogger.core;
+package jogger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
-import it.jogger.exception.FileLogException;
-import it.jogger.exception.LockLogException;
+import exception.FileLogException;
+import exception.LockLogException;
 
 /**
  * This class implements a simple system for log errror of application
@@ -103,8 +103,7 @@ public class JoggerError extends JoggerAbstract {
 			pwLog.append("\n" + post);
 			pwLog.flush();
 		} catch (FileNotFoundException e) {
-			throw new FileLogException("Impossibile lavorare sul file log.\n"
-										+ "Message error: " + e.getMessage());
+			throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
 		} finally {
 			pwLog.close();
 			if (lock) REENTRANT_LOCK.unlock();
@@ -130,8 +129,7 @@ public class JoggerError extends JoggerAbstract {
 				raf.close();
 			} catch (IOException e1) {
 			}
-			throw new FileLogException("Impossibile lavorare sul file.\n"
-										+ "Message error: " + e.getMessage());
+			throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
 		} finally {
 			try {
 				raf.close();
