@@ -1,7 +1,7 @@
 # Jogger
 Java Library -- Logger for Java
 
-Jogger is a Java library to gets the logs of an application.
+Jogger is a Java library to implements the logs on a application.
 
 <h2>Classes</h2>
 This library contains three Classes for managing logs:
