@@ -53,7 +53,6 @@ public class JoggerDebug extends JoggerAbstract {
 	/* ################################################################################# */
 	/* START GET AND SET */
 	/* ################################################################################# */
-
 	
 	public String getLogDirPathDebug() {
 		return logDirPathDebug;
@@ -90,16 +89,22 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @throws FileLogException
 	 * @throws LockLogException
 	 */
-	public void writeLog(String write) throws FileLogException, LockLogException {
+	public void writeLog(String write) {
 		if (debug) {
 			if (lock) {
 				try {
-					if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+					if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new RuntimeException("Error Timeout Reentrant Lock");
 				} catch (InterruptedException e) {
 					return;
 				}
 			}
-			File fLog = getLogFile();
+			File fLog;
+			try {
+				fLog = getLogFile();
+			} catch (FileLogException e) {
+				e.printStackTrace();
+				return;
+			}
 			RandomAccessFile raf = null;
 			String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
 			System.out.println(out);
@@ -112,7 +117,7 @@ public class JoggerDebug extends JoggerAbstract {
 					raf.close();
 				} catch (IOException e1) {
 				}
-				throw new FileLogException("Unable to work on log file.\nError message:" + e.getMessage());
+				throw new RuntimeException("Unable to work on log file.\nError message:" + e.getMessage());
 			} finally {
 				try {
 					raf.close();
