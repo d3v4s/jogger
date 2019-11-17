@@ -72,6 +72,64 @@ public class Jogger extends JoggerAbstract {
 	/* END GET AND SET */
 	/* ################################################################################# */
 
+	/* ################################################################################# */
+	/* START STATIC METHODS */
+	/* ################################################################################# */
+
+	/* metodo che ritorna path del file log da usare */
+	/**
+	 * method that return path of log file to be used
+	 * @param nameLog of log file
+	 * @param dirLog list where log file is located
+	 * @return string of log file path
+	 * @throws FileLogException
+	 */
+	public static String getLogFilePath(String nameLog, String... dirLog) throws FileLogException {
+		return getLogFile(nameLog, dirLog).getAbsolutePath();
+	}
+
+	/* metodo che ritorna path del file log da usare */
+	/**
+	 * static method that get a path of log file to be used
+	 * @param nameLog of log file
+	 * @param maxSizeBytes of log file
+	 * @param dirLog list where log file is located
+	 * @return string of log file path
+	 * @throws FileLogException
+	 */
+	public static String getLogFilePath(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
+		return getLogFile(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
+	}
+
+	/* metodo per scrivere sul file di log */
+	/**
+	 * static method that write to the log file
+	 * @param write string to be written
+	 * @param nameLog of file to write on
+	 * @param dirLogList where log file is located
+	 * @throws FileLogException
+	 * @throws LockLogException
+	 */
+	public static void writeLog(String write, String nameLog, String... dirLogList) throws FileLogException, LockLogException {
+		Jogger jogger = new Jogger(nameLog, dirLogList);
+		jogger.writeLog(write);
+	}
+
+	/* metodo per scrivere sul file di log */
+	/**
+	 * method that write to the log file
+	 * @param write string to be written
+	 * @param nameLog of file to write on
+	 * @param maxSizeBytes of log file
+	 * @param dirLogList where log file is located
+	 * @throws FileLogException
+	 * @throws LockLogException
+	 */
+	public static void writeLog(String write, String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException, LockLogException {
+		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
+		jogger.writeLog(write);
+	}
+
 	/* metodo che ritorna path */
 	/**
 	 * method that get the string of the path for log file
@@ -112,6 +170,10 @@ public class Jogger extends JoggerAbstract {
 		return jogger.getLogFile();
 	}
 
+	/* ################################################################################# */
+	/* END STATIC METHODS */
+	/* ################################################################################# */
+
 	/* metodo che ritorna il file di log su cui lavorare */
 	/**
 	 * method that return a log file to work on
@@ -120,60 +182,6 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public File getLogFile() throws FileLogException {
 		return getFile(getLogDirPath(dirLogList));
-	}
-
-	/* metodo che ritorna path del file log da usare */
-	/**
-	 * method that return path of log file to be used
-	 * @param nameLog of log file
-	 * @param dirLog list where log file is located
-	 * @return string of log file path
-	 * @throws FileLogException
-	 */
-	public static String getLogFilePath(String nameLog, String... dirLog) throws FileLogException {
-		return getLogFile(nameLog, dirLog).getAbsolutePath();
-	}
-
-	/* metodo che ritorna path del file log da usare */
-	/**
-	 * method that get a path of log file to be used
-	 * @param nameLog of log file
-	 * @param maxSizeBytes of log file
-	 * @param dirLog list where log file is located
-	 * @return string of log file path
-	 * @throws FileLogException
-	 */
-	public static String getLogFilePath(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
-		return getLogFile(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
-	}
-
-	/* metodo per scrivere sul file di log */
-	/**
-	 * method that write to the log file
-	 * @param write string to be written
-	 * @param nameLog of file to write on
-	 * @param dirLogList where log file is located
-	 * @throws FileLogException
-	 * @throws LockLogException
-	 */
-	public static void writeLog(String write, String nameLog, String... dirLogList) throws FileLogException, LockLogException {
-		Jogger jogger = new Jogger(nameLog, dirLogList);
-		jogger.writeLog(write);
-	}
-
-	/* metodo per scrivere sul file di log */
-	/**
-	 * method that write to the log file
-	 * @param write string to be written
-	 * @param nameLog of file to write on
-	 * @param maxSizeBytes of log file
-	 * @param dirLogList where log file is located
-	 * @throws FileLogException
-	 * @throws LockLogException
-	 */
-	public static void writeLog(String write, String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException, LockLogException {
-		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
-		jogger.writeLog(write);
 	}
 
 	/* metodo per scrivere sul file di log */
