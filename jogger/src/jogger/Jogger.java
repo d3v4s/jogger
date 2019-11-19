@@ -101,6 +101,31 @@ public class Jogger extends JoggerAbstract {
 		return getLogFile(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
 	}
 
+	/* metodo che ritorna path del file log da usare */
+	/**
+	 * method that return path of log file to be used
+	 * @param nameLog of log file
+	 * @param dirLog list where log file is located
+	 * @return string of log file path
+	 * @throws FileLogException
+	 */
+	public static String getLogFilePathIfExists(String nameLog, String... dirLog) throws FileLogException {
+		return getLogFileIfExists(nameLog, dirLog).getAbsolutePath();
+	}
+
+	/* metodo che ritorna path del file log da usare */
+	/**
+	 * static method that get a path of log file to be used
+	 * @param nameLog of log file
+	 * @param maxSizeBytes of log file
+	 * @param dirLog list where log file is located
+	 * @return string of log file path
+	 * @throws FileLogException
+	 */
+	public static String getLogFilePathIfExists(String nameLog, Integer maxSizeBytes, String... dirLog) throws FileLogException {
+		return getLogFileIfExists(nameLog, maxSizeBytes, dirLog).getAbsolutePath();
+	}
+
 	/* metodo per scrivere sul file di log */
 	/**
 	 * static method that write to the log file
@@ -170,6 +195,31 @@ public class Jogger extends JoggerAbstract {
 		return jogger.getLogFile();
 	}
 
+	/**
+	 * method that get a log file to work on if exists
+	 * @param nameLog file to work on
+	 * @param dirLogList where the file is located
+	 * @return log file
+	 * @throws FileLogException
+	 */
+	public static File getLogFileIfExists(String nameLog, String... dirLogList) throws FileLogException {
+		Jogger jogger = new Jogger(nameLog, dirLogList);
+		return jogger.getLogFileIfExists();
+	}
+	
+	/**
+	 * method that get a log file to work on if exists
+	 * @param nameLog file to work on
+	 * @param maxSizeBytes of log file
+	 * @param dirLogList where the file is located
+	 * @return log file
+	 * @throws FileLogException
+	 */
+	public static File getLogFileIfExists(String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException {
+		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
+		return jogger.getLogFileIfExists();
+	}
+
 	/* ################################################################################# */
 	/* END STATIC METHODS */
 	/* ################################################################################# */
@@ -182,6 +232,15 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public File getLogFile() throws FileLogException {
 		return getFile(getLogDirPath(dirLogList));
+	}
+
+	/**
+	 * method that return a log file to work on
+	 * @return log file
+	 * @throws FileLogException
+	 */
+	public File getLogFileIfExists() throws FileLogException {
+		return getFileIfExists(getLogDirPath(dirLogList));
 	}
 
 	/* metodo per scrivere sul file di log */
