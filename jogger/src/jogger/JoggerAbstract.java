@@ -83,6 +83,7 @@ public abstract class JoggerAbstract {
 	/* metodo che ritorna il file di log su cui lavorare */
 	/**
 	 * method that return a log file to work on
+	 * @param pathDirLog path directory
 	 * @return log file
 	 * @throws FileLogException
 	 */
@@ -91,7 +92,7 @@ public abstract class JoggerAbstract {
 		File fileLog = null;
 		
 		if (!fileDirLog.exists()) fileDirLog.mkdirs();
-		else if (fileDirLog.isFile()) throw new FileLogException("Error!!! Check that there no file with same name."); 
+		else if (fileDirLog.isFile()) throw new FileLogException("Error!!! Check that there no file with same name.\nDirectory path: " + fileDirLog.getAbsolutePath()); 
 		
 		String fileNameLog = prefixFileLog + nameLog + "-";
 		if (fileDirLog.isDirectory()) {
@@ -107,6 +108,52 @@ public abstract class JoggerAbstract {
 				} catch (IOException e) {
 					throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
 				}
+			} else {
+				Collections.sort(listFileLog);
+				Collections.reverse(listFileLog);
+				fileLog = Paths.get(pathDirLog, listFileLog.get(0)).toFile();
+			}
+
+			Long sizeLogByte = fileLog.length();
+			if (sizeLogByte > maxSizeBytes) {
+				Matcher m = Pattern.compile(regex).matcher(listFileLog.get(0));
+				m.find();
+				String nLog = String.format("%06d", Integer.valueOf(m.group(1)) + 1);
+
+				fileLog = Paths.get(pathDirLog, fileNameLog + nLog + fileType).toFile();
+				try {
+					if (!fileLog.createNewFile()) throw new FileLogException("Unable to work on log file, check permissions.");
+				} catch (IOException e) {
+					throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
+				}
+			}
+		} else throw new FileLogException("Unable to work on log directory, check permissions.");
+		
+		return fileLog;
+	}
+
+	/**
+	 * method that return file log if exists
+	 * @param pathDirLog path directory
+	 * @return file if exists, false otherwise
+	 * @throws FileLogException
+	 */
+	public File getFileIfExists(String pathDirLog) throws FileLogException {
+		File fileDirLog = new File(pathDirLog);
+		File fileLog = null;
+		
+		if (!fileDirLog.exists()) return null;
+		else if (fileDirLog.isFile()) throw new FileLogException("Error!!! Check that there no file with same name.\nDirectory path: " + fileDirLog.getAbsolutePath()); 
+		
+		String fileNameLog = prefixFileLog + nameLog + "-";
+		if (fileDirLog.isDirectory()) {
+			String regex = fileNameLog + "([\\d]{6})" + fileType;
+			ArrayList<String> listFileLog = new ArrayList<String>();
+			String[] lfl = fileDirLog.list();
+			for (String fname : lfl) if (Pattern.matches(regex, fname)) listFileLog.add(fname);
+
+			if (listFileLog.isEmpty()) {
+				return null;
 			} else {
 				Collections.sort(listFileLog);
 				Collections.reverse(listFileLog);
