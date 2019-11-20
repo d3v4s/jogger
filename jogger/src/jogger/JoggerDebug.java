@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
 
 import exception.FileLogException;
 import exception.LockLogException;
@@ -82,6 +81,16 @@ public class JoggerDebug extends JoggerAbstract {
 		return getFile(logDirPathDebug);
 	}
 
+	/**
+	 * method that return a log file to work on if exists
+	 * @return log file if exists, null otherwise
+	 * @throws FileLogException
+	 */
+	public File getLogFileIfExists() throws FileLogException {
+		setPrefixFileLog(prefixFileLog);
+		return getFileIfExists(logDirPathDebug);
+	}
+
 	/* metodo per scrivere sul file di log */
 	/**
 	 * method that write to the log file
@@ -91,39 +100,38 @@ public class JoggerDebug extends JoggerAbstract {
 	 */
 	public void writeLog(String write) {
 		if (debug) {
-			if (lock) {
-				try {
-					if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new RuntimeException("Error Timeout Reentrant Lock");
-				} catch (InterruptedException e) {
-					return;
-				}
-			}
-			File fLog;
 			try {
-				fLog = getLogFile();
-			} catch (FileLogException e) {
-				e.printStackTrace();
-				return;
-			}
-			RandomAccessFile raf = null;
-			String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
-			System.out.println(out);
-			try {
-				raf = new RandomAccessFile(fLog, "rw");
-				raf.seek(raf.length());
-				raf.writeBytes(out + "\n");
-			} catch (IOException e) {
-				try {
-					raf.close();
-				} catch (IOException e1) {
+				if (tryLock()) {
+					File fLog;
+					try {
+						fLog = getLogFile();
+					} catch (FileLogException e) {
+						e.printStackTrace();
+						return;
+					}
+					RandomAccessFile raf = null;
+					String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
+					System.out.println(out);
+					try {
+						raf = new RandomAccessFile(fLog, "rw");
+						raf.seek(raf.length());
+						raf.writeBytes(out + "\n");
+					} catch (IOException e) {
+						try {
+							raf.close();
+						} catch (IOException e1) {
+						}
+						throw new RuntimeException("Unable to work on log file.\nError message:" + e.getMessage());
+					} finally {
+						try {
+							raf.close();
+						} catch (IOException e) {
+						}
+						tryUnlock();
+					}
 				}
-				throw new RuntimeException("Unable to work on log file.\nError message:" + e.getMessage());
-			} finally {
-				try {
-					raf.close();
-				} catch (IOException e) {
-				}
-				if (lock) REENTRANT_LOCK.unlock();
+			} catch (LockLogException e) {
+				throw new RuntimeException("Lock log file exception.\nError message:" + e.getMessage());
 			}
 		}
 	}

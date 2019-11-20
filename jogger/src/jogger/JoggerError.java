@@ -8,7 +8,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
 
 import exception.FileLogException;
 import exception.LockLogException;
@@ -77,6 +76,16 @@ public class JoggerError extends JoggerAbstract {
 		return getFile(logDirPathError);
 	}
 
+	/**
+	 * method that return a log file to work on if exists
+	 * @return log file if exists, null otherwise
+	 * @throws FileLogException
+	 */
+	public File getLogFileIfExists() throws FileLogException {
+		setPrefixFileLog(prefixFileLog);
+		return getFileIfExists(logDirPathError);
+	}
+
 	/* metodo per scrivere sul file di log un'eccezione */
 	/**
 	 * method that write to the log file
@@ -85,28 +94,23 @@ public class JoggerError extends JoggerAbstract {
 	 * @throws LockLogException
 	 */
 	public void writeLog(Exception exception) throws FileLogException, LockLogException {
-		if (lock) {
+		if (tryLock()) {
+			File fLog = getLogFile();
+			PrintWriter pwLog = null;
 			try {
-				if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
-			} catch (InterruptedException e) {
-				return;
+				String post = readLogFile(fLog);
+				pwLog = new PrintWriter(fLog);
+				pwLog.append("Date: " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)); 
+				pwLog.append(" -- Error message: " + exception.getMessage() + "\n\t");
+				exception.printStackTrace(pwLog);
+				pwLog.append("\n" + post);
+				pwLog.flush();
+			} catch (FileNotFoundException e) {
+				throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
+			} finally {
+				pwLog.close();
+				tryUnlock();
 			}
-		}
-		File fLog = getLogFile();
-		PrintWriter pwLog = null;
-		try {
-			String post = readLogFile(fLog);
-			pwLog = new PrintWriter(fLog);
-			pwLog.append("Date: " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)); 
-			pwLog.append(" -- Error message: " + exception.getMessage() + "\n\t");
-			exception.printStackTrace(pwLog);
-			pwLog.append("\n" + post);
-			pwLog.flush();
-		} catch (FileNotFoundException e) {
-			throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
-		} finally {
-			pwLog.close();
-			if (lock) REENTRANT_LOCK.unlock();
 		}
 	}
 
