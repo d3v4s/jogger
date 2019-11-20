@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import exception.FileLogException;
+import exception.LockLogException;
 
 /**
  * Abstract class for Jogger (Java logger)
@@ -187,4 +189,35 @@ public abstract class JoggerAbstract {
 	public String getLogFilePath() throws FileLogException {
 		return getLogFile().getAbsolutePath();
 	}
+
+	/* ################################################################################# */
+	/* START PROTECTED METHODS */
+	/* ################################################################################# */
+	
+	/**
+	 * method that check if is set lock and try to lock a document
+	 * @return true if lock is disabled or successfully lock a file, false otherwise  
+	 * @throws JSXLockException
+	 */
+	protected boolean tryLock() throws LockLogException {
+		if (lock) {
+			try {
+				if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
+			} catch (InterruptedException e) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * method that check if lock is set and unlock a document 
+	 */
+	protected void tryUnlock() {
+		if (lock) REENTRANT_LOCK.unlock();
+	}
+
+	/* ################################################################################# */
+	/* END PROTECTED METHODS */
+	/* ################################################################################# */
 }

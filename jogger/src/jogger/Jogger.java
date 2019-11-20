@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
 
 import exception.FileLogException;
 import exception.LockLogException;
@@ -164,7 +163,6 @@ public class Jogger extends JoggerAbstract {
 	public static String getLogDirPath(String... dirLogList) {
 		String pathDirLog = logDirPath;
 		if (dirLogList != null) pathDirLog = Paths.get(pathDirLog, dirLogList).toString();
-
 		return pathDirLog;
 	}
 
@@ -236,7 +234,7 @@ public class Jogger extends JoggerAbstract {
 
 	/**
 	 * method that return a log file to work on
-	 * @return log file
+	 * @return log file if exists, null otherwise
 	 * @throws FileLogException
 	 */
 	public File getLogFileIfExists() throws FileLogException {
@@ -251,31 +249,26 @@ public class Jogger extends JoggerAbstract {
 	 * @throws LockLogException
 	 */
 	public void writeLog(String write) throws FileLogException, LockLogException {
-		if (lock) {
+		if (tryLock()) {
+			File fLog = getLogFile();
+			RandomAccessFile raf = null;
 			try {
-				if (!REENTRANT_LOCK.tryLock(30, TimeUnit.SECONDS)) throw new LockLogException("Error Timeout Reentrant Lock");
-			} catch (InterruptedException e) {
-				return;
-			}
-		}
-		File fLog = getLogFile();
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(fLog, "rw");
-			raf.seek(raf.length());
-			raf.writeBytes(write + "\n");
-		} catch (IOException e) {
-			try {
-				raf.close();
-			} catch (IOException e1) {
-			}
-			throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
-		} finally {
-			try {
-				raf.close();
+				raf = new RandomAccessFile(fLog, "rw");
+				raf.seek(raf.length());
+				raf.writeBytes(write + "\n");
 			} catch (IOException e) {
+				try {
+					raf.close();
+				} catch (IOException e1) {
+				}
+				throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
+			} finally {
+				try {
+					raf.close();
+				} catch (IOException e) {
+				}
+				tryUnlock();
 			}
-			if (lock) REENTRANT_LOCK.unlock();
 		}
 	}
 }
