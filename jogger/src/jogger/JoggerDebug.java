@@ -98,40 +98,26 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @throws FileLogException
 	 * @throws LockLogException
 	 */
-	public void writeLog(String write) {
+	public void writeLog(String write) throws LockLogException {
 		if (debug) {
-			try {
-				if (tryLock()) {
-					File fLog;
-					try {
-						fLog = getLogFile();
-					} catch (FileLogException e) {
-						e.printStackTrace();
-						return;
-					}
-					RandomAccessFile raf = null;
+			if (tryLock()) {
+				RandomAccessFile raf = null;
+				try {
+					File fLog = getLogFile();
 					String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
 					System.out.println(out);
+					raf = new RandomAccessFile(fLog, "rw");
+					raf.seek(raf.length());
+					raf.writeBytes(out + "\n");
+				} catch (IOException | FileLogException e) {
+					e.printStackTrace();
+				} finally {
 					try {
-						raf = new RandomAccessFile(fLog, "rw");
-						raf.seek(raf.length());
-						raf.writeBytes(out + "\n");
+						raf.close();
 					} catch (IOException e) {
-						try {
-							raf.close();
-						} catch (IOException e1) {
-						}
-						throw new RuntimeException("Unable to work on log file.\nError message:" + e.getMessage());
-					} finally {
-						try {
-							raf.close();
-						} catch (IOException e) {
-						}
-						tryUnlock();
 					}
+					tryUnlock();
 				}
-			} catch (LockLogException e) {
-				throw new RuntimeException("Lock log file exception.\nError message:" + e.getMessage());
 			}
 		}
 	}

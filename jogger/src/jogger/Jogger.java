@@ -248,20 +248,16 @@ public class Jogger extends JoggerAbstract {
 	 * @throws FileLogException
 	 * @throws LockLogException
 	 */
-	public void writeLog(String write) throws FileLogException, LockLogException {
+	public void writeLog(String write) throws LockLogException {
 		if (tryLock()) {
-			File fLog = getLogFile();
 			RandomAccessFile raf = null;
 			try {
+				File fLog = getLogFile();
 				raf = new RandomAccessFile(fLog, "rw");
 				raf.seek(raf.length());
 				raf.writeBytes(write + "\n");
-			} catch (IOException e) {
-				try {
-					raf.close();
-				} catch (IOException e1) {
-				}
-				throw new FileLogException("Unable to work on log file.\nError message: " + e.getMessage());
+			} catch (IOException | FileLogException e) {
+				e.printStackTrace();
 			} finally {
 				try {
 					raf.close();

@@ -93,11 +93,11 @@ public class JoggerError extends JoggerAbstract {
 	 * @throws FileLogException
 	 * @throws LockLogException
 	 */
-	public void writeLog(Exception exception) throws FileLogException, LockLogException {
+	public void writeLog(Exception exception) throws LockLogException {
 		if (tryLock()) {
-			File fLog = getLogFile();
 			PrintWriter pwLog = null;
 			try {
+				File fLog = getLogFile();
 				String post = readLogFile(fLog);
 				pwLog = new PrintWriter(fLog);
 				pwLog.append("Date: " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)); 
@@ -105,13 +105,14 @@ public class JoggerError extends JoggerAbstract {
 				exception.printStackTrace(pwLog);
 				pwLog.append("\n" + post);
 				pwLog.flush();
-			} catch (FileNotFoundException e) {
-				throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
+			} catch (FileNotFoundException | FileLogException e) {
+				e.printStackTrace();
 			} finally {
 				pwLog.close();
 				tryUnlock();
 			}
 		}
+		exception.printStackTrace();
 	}
 
 	/* metodo che legge il file log e ritorna stringa */
