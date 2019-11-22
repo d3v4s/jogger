@@ -98,26 +98,30 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @throws FileLogException
 	 * @throws LockLogException
 	 */
-	public void writeLog(String write) throws LockLogException {
+	public void writeLog(String write) {
 		if (debug) {
-			if (tryLock()) {
-				RandomAccessFile raf = null;
-				try {
-					File fLog = getLogFile();
-					String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
-					System.out.println(out);
-					raf = new RandomAccessFile(fLog, "rw");
-					raf.seek(raf.length());
-					raf.writeBytes(out + "\n");
-				} catch (IOException | FileLogException e) {
-					e.printStackTrace();
-				} finally {
+			try {
+				if (tryLock()) {
+					RandomAccessFile raf = null;
 					try {
-						raf.close();
-					} catch (IOException e) {
+						File fLog = getLogFile();
+						String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
+						System.out.println(out);
+						raf = new RandomAccessFile(fLog, "rw");
+						raf.seek(raf.length());
+						raf.writeBytes(out + "\n");
+					} catch (IOException | FileLogException e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							raf.close();
+						} catch (IOException e) {
+						}
+						tryUnlock();
 					}
-					tryUnlock();
 				}
+			} catch (LockLogException e) {
+				e.printStackTrace();
 			}
 		}
 	}
