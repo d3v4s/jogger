@@ -6,6 +6,8 @@ import java.io.RandomAccessFile;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import exception.FileLogException;
 import exception.LockLogException;
@@ -18,7 +20,8 @@ import exception.LockLogException;
 public class JoggerDebug extends JoggerAbstract {
 	private String logDirPathDebug = Paths.get(logDirPath, "debug").toString();
 	private String prefixFileLog = "log_debug-";
-	private boolean debug = true;
+	private boolean debug = false;
+	private boolean printStackTrace = false;
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
@@ -65,6 +68,12 @@ public class JoggerDebug extends JoggerAbstract {
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
+	public boolean isPrintStackTrace() {
+		return printStackTrace;
+	}
+	public void setPrintStackTrace(boolean printStackTrace) {
+		this.printStackTrace = printStackTrace;
+	}
 
 	/* ################################################################################# */
 	/* END GET AND SET */
@@ -105,11 +114,24 @@ public class JoggerDebug extends JoggerAbstract {
 					RandomAccessFile raf = null;
 					try {
 						File fLog = getLogFile();
-						String out = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME) + " :: " + write;
-						System.out.println(out);
+						StringBuffer out = new StringBuffer(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+						if (printStackTrace) {
+							ArrayList<StackTraceElement> stackTrace =  new ArrayList<StackTraceElement>(Arrays.asList(Thread.currentThread().getStackTrace()));
+							stackTrace.remove(0);
+							
+							for (StackTraceElement e : stackTrace) {
+//								out.append("\n\t[").append(e.getFileName()).append(":").append(e.getLineNumber()).append("] ");
+//								out.append(e.getClassName()).append(".").append(e.getMethodName());
+								out.append("\n\t").append(e.toString());
+							}
+							out.append("\nMessage: ").append(write);
+						} else {
+							out.append(" :: ").append(write);
+						}
+						System.out.println(out.append("\n"));
 						raf = new RandomAccessFile(fLog, "rw");
 						raf.seek(raf.length());
-						raf.writeBytes(out + "\n");
+						raf.writeBytes(out.append("\n").toString());
 					} catch (IOException | FileLogException e) {
 						e.printStackTrace();
 					} finally {
