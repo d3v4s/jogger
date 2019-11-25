@@ -100,6 +100,66 @@ public class JoggerDebug extends JoggerAbstract {
 		return getFileIfExists(logDirPathDebug);
 	}
 
+	/**
+	 * method that write starting
+	 */
+	public void writeStart() {
+		writeLog("STARTING");
+	}
+
+	/**
+	 * method that write starting
+	 * @param write to be append in out
+	 */
+	public void writeStart(String write) {
+		writeLog("STARTING -- " + write);
+	}
+
+	/**
+	 * method that write end
+	 */
+	public void writeEnd() {
+		writeLog("END");
+	}
+
+	/**
+	 * method that write end
+	 * @param write to be append in out
+	 */
+	public void writeEnd(String write) {
+		writeLog("END -- " + write);
+	}
+
+	/**
+	 * method that write success
+	 */
+	public void writeSuccess() {
+		writeLog("SUCCESS");
+	}
+
+	/**
+	 * method that write success
+	 * @param write to be append in out
+	 */
+	public void writeSuccess(String write) {
+		writeLog("SUCCESS -- " + write);
+	}
+
+	/**
+	 * method that write fail
+	 */
+	public void writeFail() {
+		writeLog("FAIL");
+	}
+
+	/**
+	 * method that write fail
+	 * @param write to be append in out
+	 */
+	public void writeFail(String write) {
+		writeLog("FAIL -- " + write);
+	}
+
 	/* metodo per scrivere sul file di log */
 	/**
 	 * method that write to the log file
@@ -118,10 +178,8 @@ public class JoggerDebug extends JoggerAbstract {
 						if (printStackTrace) {
 							ArrayList<StackTraceElement> stackTrace =  new ArrayList<StackTraceElement>(Arrays.asList(Thread.currentThread().getStackTrace()));
 							stackTrace.remove(0);
-							
+							stackTrace.remove(1);
 							for (StackTraceElement e : stackTrace) {
-//								out.append("\n\t[").append(e.getFileName()).append(":").append(e.getLineNumber()).append("] ");
-//								out.append(e.getClassName()).append(".").append(e.getMethodName());
 								out.append("\n\t").append(e.toString());
 							}
 							out.append("\nMessage: ").append(write);
