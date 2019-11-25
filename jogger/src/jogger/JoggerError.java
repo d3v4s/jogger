@@ -128,7 +128,7 @@ public class JoggerError extends JoggerAbstract {
 		try {
 			raf = new RandomAccessFile(file, "r");
 			raf.seek(0);
-			while(raf.getFilePointer() < raf.length()) textOut = textOut.append(raf.readLine() + (raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
+			while(raf.getFilePointer() < raf.length()) textOut = textOut.append(raf.readLine().concat(raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
 		} catch (IOException e) {
 			try {
 				raf.close();
