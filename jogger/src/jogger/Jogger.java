@@ -12,14 +12,18 @@ import exception.LockLogException;
  * This class implements a simple system to manage the logs of an application
  * @author Andrea Serra
  */
-public class Jogger extends JoggerAbstract {
+public class Jogger extends LogManager {
 	private String[] dirLogList = {"jogger"};
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
 	/* ################################################################################# */
 
+	/**
+	 * simple construct
+	 */
 	public Jogger() {
+		this.logDirWorkPath = getLogDirPath(dirLogList);
 	}
 
 	/**
@@ -28,6 +32,7 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public Jogger(String nameLog) {
 		this.nameLog = nameLog;
+		this.logDirWorkPath = getLogDirPath(dirLogList);
 	}
 
 	/**
@@ -38,6 +43,7 @@ public class Jogger extends JoggerAbstract {
 	public Jogger(String nameLog, String... dirLogList) {
 		this.nameLog = nameLog;
 		if (dirLogList.length > 0) this.dirLogList =  dirLogList;
+		this.logDirWorkPath = getLogDirPath(dirLogList);
 	}
 
 	/**
@@ -50,25 +56,11 @@ public class Jogger extends JoggerAbstract {
 		this.nameLog = nameLog;
 		this.maxSizeBytes = maxSizeBytes;
 		if (dirLogList.length > 0) this.dirLogList =  dirLogList;
+		this.logDirWorkPath = getLogDirPath(dirLogList);
 	}
 
 	/* ################################################################################# */
 	/* END CONSTRUCTORS */
-	/* ################################################################################# */
-
-	/* ################################################################################# */
-	/* START GET AND SET */
-	/* ################################################################################# */
-
-	public String[] getDirLogList() {
-		return dirLogList;
-	}
-	public void setDirLogList(String[] dirLogList) {
-		this.dirLogList = dirLogList;
-	}
-
-	/* ################################################################################# */
-	/* END GET AND SET */
 	/* ################################################################################# */
 
 	/* ################################################################################# */
@@ -161,7 +153,7 @@ public class Jogger extends JoggerAbstract {
 	 * @return string of the path
 	 */
 	public static String getLogDirPath(String... dirLogList) {
-		String pathDirLog = logDirPath;
+		String pathDirLog = LOGS_DIR;
 		if (dirLogList != null) pathDirLog = Paths.get(pathDirLog, dirLogList).toString();
 		return pathDirLog;
 	}
@@ -176,7 +168,7 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public static File getLogFile(String nameLog, String... dirLogList) throws FileLogException {
 		Jogger jogger = new Jogger(nameLog, dirLogList);
-		return jogger.getLogFile();
+		return jogger.getFile();
 	}
 	
 	/* metodo che ritorna il file di log su cui lavorare */
@@ -190,7 +182,7 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public static File getLogFile(String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException {
 		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
-		return jogger.getLogFile();
+		return jogger.getFile();
 	}
 
 	/**
@@ -202,7 +194,7 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public static File getLogFileIfExists(String nameLog, String... dirLogList) throws FileLogException {
 		Jogger jogger = new Jogger(nameLog, dirLogList);
-		return jogger.getLogFileIfExists();
+		return jogger.getFileIfExists();
 	}
 	
 	/**
@@ -215,31 +207,32 @@ public class Jogger extends JoggerAbstract {
 	 */
 	public static File getLogFileIfExists(String nameLog, Integer maxSizeBytes, String... dirLogList) throws FileLogException {
 		Jogger jogger = new Jogger(nameLog, maxSizeBytes, dirLogList);
-		return jogger.getLogFileIfExists();
+		return jogger.getFileIfExists();
 	}
 
 	/* ################################################################################# */
 	/* END STATIC METHODS */
 	/* ################################################################################# */
 
-	/* metodo che ritorna il file di log su cui lavorare */
-	/**
-	 * method that return a log file to work on
-	 * @return log file
-	 * @throws FileLogException
-	 */
-	public File getLogFile() throws FileLogException {
-		return getFile(getLogDirPath(dirLogList));
+	/* ################################################################################# */
+	/* START GET AND SET */
+	/* ################################################################################# */
+
+	public String[] getDirLogList() {
+		return dirLogList;
+	}
+	public void setDirLogList(String... dirLogList) {
+		this.dirLogList = dirLogList;
+		this.logDirWorkPath = getLogDirPath(dirLogList);
 	}
 
-	/**
-	 * method that return a log file to work on
-	 * @return log file if exists, null otherwise
-	 * @throws FileLogException
-	 */
-	public File getLogFileIfExists() throws FileLogException {
-		return getFileIfExists(getLogDirPath(dirLogList));
-	}
+	/* ################################################################################# */
+	/* END GET AND SET */
+	/* ################################################################################# */
+
+	/* ################################################################################# */
+	/* START PUBLIC METHODS */
+	/* ################################################################################# */
 
 	/* metodo per scrivere sul file di log */
 	/**
@@ -252,10 +245,10 @@ public class Jogger extends JoggerAbstract {
 		if (tryLock()) {
 			RandomAccessFile raf = null;
 			try {
-				File fLog = getLogFile();
+				File fLog = getFile();
 				raf = new RandomAccessFile(fLog, "rw");
 				raf.seek(raf.length());
-				raf.writeBytes(write + "\n");
+				raf.writeBytes(write.concat("\n"));
 			} catch (IOException | FileLogException e) {
 				e.printStackTrace();
 			} finally {
@@ -267,4 +260,9 @@ public class Jogger extends JoggerAbstract {
 			}
 		}
 	}
+
+	/* ################################################################################# */
+	/* END PUBLIC METHODS */
+	/* ################################################################################# */
+
 }

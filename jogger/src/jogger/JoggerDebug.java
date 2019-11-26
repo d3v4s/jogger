@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,17 +18,22 @@ import exception.LockLogException;
  * @author Andrea Serra
  *
  */
-public class JoggerDebug extends JoggerAbstract {
-	private String logDirPathDebug = Paths.get(logDirPath, "debug").toString();
-	private String prefixFileLog = "log_debug-";
+public class JoggerDebug extends LogManager {
+	private final String LOG_DIR_DEBUG = Paths.get(LOGS_DIR, "debug").toString();
+	private final String PREFIX_LOG_FILE_DEBUG = "log_debug-";
 	private boolean debug = false;
-	private boolean printStackTrace = false;
+	private boolean printStackTrace = true;
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
 	/* ################################################################################# */
 
+	/**
+	 * simple construct
+	 */
 	public JoggerDebug() {
+		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
+		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/**
@@ -36,6 +42,8 @@ public class JoggerDebug extends JoggerAbstract {
 	 */
 	public JoggerDebug(String nameLog) {
 		this.nameLog = nameLog;
+		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
+		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/**
@@ -46,6 +54,8 @@ public class JoggerDebug extends JoggerAbstract {
 	public JoggerDebug(String nameLog, Integer maxSizeBytes) {
 		this.nameLog = nameLog;
 		this.maxSizeBytes = maxSizeBytes;
+		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
+		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/* ################################################################################# */
@@ -56,12 +66,6 @@ public class JoggerDebug extends JoggerAbstract {
 	/* START GET AND SET */
 	/* ################################################################################# */
 	
-	public String getLogDirPathDebug() {
-		return logDirPathDebug;
-	}
-	public void setLogDirPathDebug(String logDirPathDebug) {
-		this.logDirPathDebug = logDirPathDebug;
-	}
 	public boolean isDebug() {
 		return debug;
 	}
@@ -74,31 +78,14 @@ public class JoggerDebug extends JoggerAbstract {
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
 	}
+	/* GET */
+	public String getLogDirWorkPath() {
+		return LOG_DIR_DEBUG;
+	}
 
 	/* ################################################################################# */
 	/* END GET AND SET */
 	/* ################################################################################# */
-
-	/* metodo che ritorna il file di log su cui lavorare */
-	/**
-	 * method that return a log file to work on
-	 * @return log file
-	 * @throws FileLogException
-	 */
-	public File getLogFile() throws FileLogException {
-		setPrefixFileLog(prefixFileLog);
-		return getFile(logDirPathDebug);
-	}
-
-	/**
-	 * method that return a log file to work on if exists
-	 * @return log file if exists, null otherwise
-	 * @throws FileLogException
-	 */
-	public File getLogFileIfExists() throws FileLogException {
-		setPrefixFileLog(prefixFileLog);
-		return getFileIfExists(logDirPathDebug);
-	}
 
 	/**
 	 * method that write starting
@@ -112,7 +99,7 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @param write to be append in out
 	 */
 	public void writeStart(String write) {
-		writeLog("STARTING -- " + write);
+		writeLog(MessageFormat.format("STARTING -- {0}", write));
 	}
 
 	/**
@@ -127,7 +114,7 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @param write to be append in out
 	 */
 	public void writeEnd(String write) {
-		writeLog("END -- " + write);
+		writeLog(MessageFormat.format("END -- {0}", write));
 	}
 
 	/**
@@ -142,7 +129,7 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @param write to be append in out
 	 */
 	public void writeSuccess(String write) {
-		writeLog("SUCCESS -- " + write);
+		writeLog(MessageFormat.format("SUCCESS -- {0}", write));
 	}
 
 	/**
@@ -157,7 +144,22 @@ public class JoggerDebug extends JoggerAbstract {
 	 * @param write to be append in out
 	 */
 	public void writeFail(String write) {
-		writeLog("FAIL -- " + write);
+		writeLog(MessageFormat.format("FAIL -- {0}", write));
+	}
+
+	/**
+	 * method that write error
+	 */
+	public void writeError() {
+		writeLog("ERROR");
+	}
+
+	/**
+	 * method that write fail
+	 * @param write to be append in out
+	 */
+	public void writeError(String write) {
+		writeLog(MessageFormat.format("ERROR -- {0}", write));
 	}
 
 	/* metodo per scrivere sul file di log */
@@ -171,22 +173,33 @@ public class JoggerDebug extends JoggerAbstract {
 		if (debug) {
 			try {
 				if (tryLock()) {
+					/* read file with random access file */
 					RandomAccessFile raf = null;
 					try {
-						File fLog = getLogFile();
-						StringBuffer out = new StringBuffer(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+						File fLog = getFile();
+						StringBuilder out = new StringBuilder();
+						out.append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
 						if (printStackTrace) {
+							/* append message */
+							out.append(" :: Message: ").append(write);
+
+							/* get stack trace */
 							ArrayList<StackTraceElement> stackTrace =  new ArrayList<StackTraceElement>(Arrays.asList(Thread.currentThread().getStackTrace()));
+
+							/* remove JoggerDebug and Thread from stack trace */
 							stackTrace.remove(0);
-							stackTrace.remove(1);
-							for (StackTraceElement e : stackTrace) {
-								out.append("\n\t").append(e.toString());
-							}
-							out.append("\nMessage: ").append(write);
-						} else {
-							out.append(" :: ").append(write);
-						}
+							stackTrace.remove(0);
+
+							/* append stack trace */
+							for (StackTraceElement e : stackTrace) out.append("\n\t").append(e.toString());
+
+							/* append simple output */
+						} else out.append(" :: ").append(write);
+
+						/* print output */
 						System.out.println(out.append("\n"));
+
+						/* write output on file */
 						raf = new RandomAccessFile(fLog, "rw");
 						raf.seek(raf.length());
 						raf.writeBytes(out.append("\n").toString());
