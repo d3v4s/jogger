@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,15 +18,21 @@ import exception.LockLogException;
  * @author Andrea Serra
  *
  */
-public class JoggerError extends JoggerAbstract {
-	private String logDirPathError = Paths.get(Jogger.logDirPath, "error").toString();
-	private String prefixFileLog = "log_error-";
+public class JoggerError extends LogManager {
+	private final String LOG_DIR_ERROR = Paths.get(LOGS_DIR, "error").toString();
+	private final String PREFIX_LOG_FILE_ERROR = "log_error-";
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
 	/* ################################################################################# */
 
+	/**
+	 * simple construct
+	 */
 	public JoggerError() {
+		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
+		this.logDirWorkPath = LOG_DIR_ERROR;
+		
 	}
 
 	/**
@@ -34,6 +41,8 @@ public class JoggerError extends JoggerAbstract {
 	 */
 	public JoggerError(String nameLog) {
 		this.nameLog = nameLog;
+		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
+		this.logDirWorkPath = LOG_DIR_ERROR;
 	}
 
 	/**
@@ -44,6 +53,8 @@ public class JoggerError extends JoggerAbstract {
 	public JoggerError(String nameLog, Integer maxSizeBytes) {
 		this.nameLog = nameLog;
 		this.maxSizeBytes = maxSizeBytes;
+		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
+		this.logDirWorkPath = LOG_DIR_ERROR;
 	}
 
 	/* ################################################################################# */
@@ -55,36 +66,12 @@ public class JoggerError extends JoggerAbstract {
 	/* ################################################################################# */
 
 	public String getLogDirPathError() {
-		return logDirPathError;
-	}
-	public void setLogDirPathError(String logDirPathError) {
-		this.logDirPathError = logDirPathError;
+		return LOG_DIR_ERROR;
 	}
 
 	/* ################################################################################# */
 	/* END GET AND SET */
 	/* ################################################################################# */
-
-	/* metodo che ritorna il file di log su cui lavorare */
-	/**
-	 * method that return a log file to work on
-	 * @return log file
-	 * @throws FileLogException
-	 */
-	public File getLogFile() throws FileLogException {
-		setPrefixFileLog(prefixFileLog);
-		return getFile(logDirPathError);
-	}
-
-	/**
-	 * method that return a log file to work on if exists
-	 * @return log file if exists, null otherwise
-	 * @throws FileLogException
-	 */
-	public File getLogFileIfExists() throws FileLogException {
-		setPrefixFileLog(prefixFileLog);
-		return getFileIfExists(logDirPathError);
-	}
 
 	/* metodo per scrivere sul file di log un'eccezione */
 	/**
@@ -97,11 +84,10 @@ public class JoggerError extends JoggerAbstract {
 		if (tryLock()) {
 			PrintWriter pwLog = null;
 			try {
-				File fLog = getLogFile();
+				File fLog = getFile();
 				String post = readLogFile(fLog);
 				pwLog = new PrintWriter(fLog);
-				pwLog.append("Date: " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)); 
-				pwLog.append(" -- Error message: " + exception.getMessage() + "\n\t");
+				pwLog.append(MessageFormat.format("Date: {0} -- Error message: {1}\n\t", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME), exception.getMessage())); 
 				exception.printStackTrace(pwLog);
 				pwLog.append("\n" + post);
 				pwLog.flush();
@@ -123,18 +109,18 @@ public class JoggerError extends JoggerAbstract {
 	 * @throws FileLogException
 	 */
 	private String readLogFile(File file) throws FileLogException {
-		StringBuffer textOut = new StringBuffer();
+		StringBuilder textOut = new StringBuilder();
 		RandomAccessFile raf = null;
 		try {
 			raf = new RandomAccessFile(file, "r");
 			raf.seek(0);
-			while(raf.getFilePointer() < raf.length()) textOut = textOut.append(raf.readLine().concat(raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
+			while(raf.getFilePointer() < raf.length()) textOut.append(raf.readLine().concat(raf.getFilePointer() == raf.length()-1 ? "" : "\n"));
 		} catch (IOException e) {
 			try {
 				raf.close();
 			} catch (IOException e1) {
 			}
-			throw new FileLogException("Unable to work on file log.\nMessage error: " + e.getMessage());
+			throw new FileLogException(MessageFormat.format("Unable to work on file log.\nMessage error: {0}", e.getMessage()));
 		} finally {
 			try {
 				raf.close();
