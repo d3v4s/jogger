@@ -3,14 +3,13 @@ package jogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import exception.FileLogException;
+import exception.LogFileException;
 import exception.LockLogException;
 
 /**
@@ -18,11 +17,11 @@ import exception.LockLogException;
  * @author Andrea Serra
  *
  */
-public class JoggerDebug extends LogManager {
-	private final String LOG_DIR_DEBUG = Paths.get(LOGS_DIR, "debug").toString();
+public class JoggerDebug extends Jogger {
+	private final static String[] LOG_DIR_DEBUG_LIST = {"debug"};
 	private final String PREFIX_LOG_FILE_DEBUG = "log_debug-";
-	private boolean debug = false;
 	private boolean printStackTrace = true;
+	private boolean debug = false;
 
 	/* ################################################################################# */
 	/* START CONSTRUCTORS */
@@ -32,8 +31,8 @@ public class JoggerDebug extends LogManager {
 	 * simple construct
 	 */
 	public JoggerDebug() {
+		super(LOG_DIR_DEBUG_LIST);
 		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
-		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/**
@@ -41,9 +40,8 @@ public class JoggerDebug extends LogManager {
 	 * @param nameLog for log file
 	 */
 	public JoggerDebug(String nameLog) {
-		this.nameLog = nameLog;
+		super(nameLog, LOG_DIR_DEBUG_LIST);
 		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
-		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/**
@@ -52,10 +50,8 @@ public class JoggerDebug extends LogManager {
 	 * @param maxSizeBytes of log file
 	 */
 	public JoggerDebug(String nameLog, Integer maxSizeBytes) {
-		this.nameLog = nameLog;
-		this.maxSizeBytes = maxSizeBytes;
+		super(nameLog, maxSizeBytes, LOG_DIR_DEBUG_LIST);
 		this.prefixLogFile = PREFIX_LOG_FILE_DEBUG;
-		this.logDirWorkPath = LOG_DIR_DEBUG;
 	}
 
 	/* ################################################################################# */
@@ -77,10 +73,6 @@ public class JoggerDebug extends LogManager {
 	}
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
-	}
-	/* GET */
-	public String getLogDirWorkPath() {
-		return LOG_DIR_DEBUG;
 	}
 
 	/* ################################################################################# */
@@ -166,56 +158,59 @@ public class JoggerDebug extends LogManager {
 	/**
 	 * method that write to the log file
 	 * @param write string to be written
-	 * @throws FileLogException
+	 * @throws LogFileException
 	 * @throws LockLogException
 	 */
+	@Override
 	public void writeLog(String write) {
-		if (debug) {
+		/* if debug disable return */
+		if (!debug) return;
+
+		try {
+			/* if trylock failed return */
+			if (!tryLock()) return;
+
+			/* read file with random access file */
+			RandomAccessFile raf = null;
 			try {
-				if (tryLock()) {
-					/* read file with random access file */
-					RandomAccessFile raf = null;
-					try {
-						File fLog = getFile();
-						StringBuilder out = new StringBuilder();
-						out.append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-						if (printStackTrace) {
-							/* append message */
-							out.append(" :: Message: ").append(write);
-
-							/* get stack trace */
-							ArrayList<StackTraceElement> stackTrace =  new ArrayList<StackTraceElement>(Arrays.asList(Thread.currentThread().getStackTrace()));
-
-							/* remove JoggerDebug and Thread from stack trace */
-							stackTrace.remove(0);
-							stackTrace.remove(0);
-
-							/* append stack trace */
-							for (StackTraceElement e : stackTrace) out.append("\n\t").append(e.toString());
-
-							/* append simple output */
-						} else out.append(" :: ").append(write);
-
-						/* print output */
-						System.out.println(out.append("\n"));
-
-						/* write output on file */
-						raf = new RandomAccessFile(fLog, "rw");
-						raf.seek(raf.length());
-						raf.writeBytes(out.append("\n").toString());
-					} catch (IOException | FileLogException e) {
-						e.printStackTrace();
-					} finally {
-						try {
-							raf.close();
-						} catch (IOException e) {
-						}
-						tryUnlock();
-					}
-				}
-			} catch (LockLogException e) {
+				File fLog = getFile();
+				StringBuilder out = new StringBuilder();
+				out.append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+				if (printStackTrace) {
+					/* append message */
+					out.append(" :: Message: ").append(write);
+					
+					/* get stack trace */
+					ArrayList<StackTraceElement> stackTrace =  new ArrayList<StackTraceElement>(Arrays.asList(Thread.currentThread().getStackTrace()));
+					
+					/* remove JoggerDebug and Thread from stack trace */
+					stackTrace.remove(0);
+					stackTrace.remove(0);
+					
+					/* append stack trace */
+					for (StackTraceElement e : stackTrace) out.append("\n\t").append(e.toString());
+					
+					/* append simple output */
+				} else out.append(" :: ").append(write);
+				
+				/* print output */
+				System.out.println(out.append("\n"));
+				
+				/* write output on file */
+				raf = new RandomAccessFile(fLog, "rw");
+				raf.seek(raf.length());
+				raf.writeBytes(out.append("\n").toString());
+			} catch (IOException | LogFileException e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					raf.close();
+				} catch (IOException e) {
+				}
+				tryUnlock();
 			}
+		} catch (LockLogException e) {
+			e.printStackTrace();
 		}
 	}
 }
