@@ -1,12 +1,14 @@
 # Jogger
-Java Library -- Logger for Java
+Logger for Java
 
 Jogger is a Java library to implements the logs on a application.
 
-<h2>Classes</h2>
+Download [~~releases~~](https://github.com/d3v4s/jogger/releases)
+For more info read the [wiki](https://github.com/d3v4s/jogger/wiki)
+
+## [Classes](https://github.com/d3v4s/jogger/wiki/Classes)
+
 This library contains three Classes for managing logs:
-<ul>
-  <li><b>Jogger</b>, for simple and classic logs</li>
-  <li><b>JoggerDebug</b>, to implements a debug and log on application</li>
-  <li><b>JoggerError</b>, to log a Java Exception</li>
-</ul>
+* [**Jogger**](https://github.com/d3v4s/jogger/wiki/Class-Jogger), for simple and classic logs
+* [**JoggerDebug**](https://github.com/d3v4s/jogger/wiki/Class-JoggerDebug), to implements a debug and log on application
+* [**JoggerError**](https://github.com/d3v4s/jogger/wiki/Class-JoggerError), to log a Java Exception
