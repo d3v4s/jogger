@@ -50,10 +50,15 @@ public class JoggerError extends Jogger {
 	 */
 	public JoggerError(String nameLog, Integer maxSizeBytes) {
 		super(nameLog, maxSizeBytes, LOG_DIR_ERROR_LIST);
+		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
 	}
 
 	/* ################################################################################# */
 	/* END CONSTRUCTORS */
+	/* ################################################################################# */
+
+	/* ################################################################################# */
+	/* START LOG METHODS */
 	/* ################################################################################# */
 
 	@Override
@@ -88,6 +93,10 @@ public class JoggerError extends Jogger {
 			exception.printStackTrace();
 		}
 	}
+
+	/* ################################################################################# */
+	/* END LOG METHODS */
+	/* ################################################################################# */
 
 	/* metodo che legge il file log e ritorna stringa */
 	/**
