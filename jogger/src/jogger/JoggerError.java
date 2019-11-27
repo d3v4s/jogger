@@ -5,21 +5,20 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import exception.FileLogException;
+import exception.LogFileException;
 import exception.LockLogException;
 
 /**
- * This class implements a simple system for log errror of application
+ * This class implements a simple system for log error of application
  * @author Andrea Serra
  *
  */
-public class JoggerError extends LogManager {
-	private final String LOG_DIR_ERROR = Paths.get(LOGS_DIR, "error").toString();
+public class JoggerError extends Jogger {
+	private final static String[] LOG_DIR_ERROR_LIST = {"error"};
 	private final String PREFIX_LOG_FILE_ERROR = "log_error-";
 
 	/* ################################################################################# */
@@ -30,8 +29,8 @@ public class JoggerError extends LogManager {
 	 * simple construct
 	 */
 	public JoggerError() {
+		super(LOG_DIR_ERROR_LIST);
 		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
-		this.logDirWorkPath = LOG_DIR_ERROR;
 		
 	}
 
@@ -40,9 +39,8 @@ public class JoggerError extends LogManager {
 	 * @param nameLog for log file
 	 */
 	public JoggerError(String nameLog) {
-		this.nameLog = nameLog;
+		super(nameLog, LOG_DIR_ERROR_LIST);
 		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
-		this.logDirWorkPath = LOG_DIR_ERROR;
 	}
 
 	/**
@@ -51,54 +49,44 @@ public class JoggerError extends LogManager {
 	 * @param maxSizeBytes of log file
 	 */
 	public JoggerError(String nameLog, Integer maxSizeBytes) {
-		this.nameLog = nameLog;
-		this.maxSizeBytes = maxSizeBytes;
-		this.prefixLogFile = PREFIX_LOG_FILE_ERROR;
-		this.logDirWorkPath = LOG_DIR_ERROR;
+		super(nameLog, maxSizeBytes, LOG_DIR_ERROR_LIST);
 	}
 
 	/* ################################################################################# */
 	/* END CONSTRUCTORS */
 	/* ################################################################################# */
 
-	/* ################################################################################# */
-	/* START GET AND SET */
-	/* ################################################################################# */
-
-	public String getLogDirPathError() {
-		return LOG_DIR_ERROR;
+	@Override
+	@Deprecated
+	public void writeLog(String write) {
 	}
-
-	/* ################################################################################# */
-	/* END GET AND SET */
-	/* ################################################################################# */
 
 	/* metodo per scrivere sul file di log un'eccezione */
 	/**
 	 * method that write to the log file
 	 * @param write string to be written
-	 * @throws FileLogException
+	 * @throws LogFileException
 	 * @throws LockLogException
 	 */
 	public void writeLog(Exception exception) throws LockLogException {
-		if (tryLock()) {
-			PrintWriter pwLog = null;
-			try {
-				File fLog = getFile();
-				String post = readLogFile(fLog);
-				pwLog = new PrintWriter(fLog);
-				pwLog.append(MessageFormat.format("Date: {0} -- Error message: {1}\n\t", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME), exception.getMessage())); 
-				exception.printStackTrace(pwLog);
-				pwLog.append("\n" + post);
-				pwLog.flush();
-			} catch (FileNotFoundException | FileLogException e) {
-				e.printStackTrace();
-			} finally {
-				pwLog.close();
-				tryUnlock();
-			}
+		if (!tryLock()) return;
+
+		PrintWriter pwLog = null;
+		try {
+			File fLog = getFile();
+			String post = readLogFile(fLog);
+			pwLog = new PrintWriter(fLog);
+			pwLog.append(MessageFormat.format("Date: {0} -- Error message: {1}\n\t", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME), exception.getMessage())); 
+			exception.printStackTrace(pwLog);
+			pwLog.append("\n" + post);
+			pwLog.flush();
+		} catch (FileNotFoundException | LogFileException e) {
+			e.printStackTrace();
+		} finally {
+			pwLog.close();
+			tryUnlock();
+			exception.printStackTrace();
 		}
-		exception.printStackTrace();
 	}
 
 	/* metodo che legge il file log e ritorna stringa */
@@ -106,9 +94,9 @@ public class JoggerError extends LogManager {
 	 * method that get a string with content of log file
 	 * @param file to be read
 	 * @return string with content of log file
-	 * @throws FileLogException
+	 * @throws LogFileException
 	 */
-	private String readLogFile(File file) throws FileLogException {
+	private String readLogFile(File file) throws LogFileException {
 		StringBuilder textOut = new StringBuilder();
 		RandomAccessFile raf = null;
 		try {
@@ -120,7 +108,7 @@ public class JoggerError extends LogManager {
 				raf.close();
 			} catch (IOException e1) {
 			}
-			throw new FileLogException(MessageFormat.format("Unable to work on file log.\nMessage error: {0}", e.getMessage()));
+			throw new LogFileException(MessageFormat.format("Unable to work on file log.\nMessage error: {0}", e.getMessage()));
 		} finally {
 			try {
 				raf.close();
