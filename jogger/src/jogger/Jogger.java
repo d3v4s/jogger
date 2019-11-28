@@ -7,13 +7,14 @@ import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import exception.LogFileException;
 import exception.LockLogException;
+import exception.LogFileException;
 
 /**
  * This class implements a simple system to manage the logs of an application
@@ -350,7 +351,7 @@ public class Jogger {
 		String regex = stringBuilder.toString();
 
 		/* search log files in the directory */
-		ArrayList<String> logFileList = getLogfiles(logDir, regex);
+		ArrayList<String> logFileList = new ArrayList<String>(getLogfiles(logDir, regex));
 
 		if (logFileList.isEmpty()) {
 			/* if no log file found create new log file */
@@ -391,7 +392,7 @@ public class Jogger {
 		String regex = stringBuilder.toString();
 
 		/* search log files in the directory */
-		ArrayList<String> logFileList = getLogfiles(logDir, regex);
+		ArrayList<String> logFileList = new ArrayList<String>(getLogfiles(logDir, regex));
 		
 		/* return if not log file found */
 		if (logFileList.isEmpty()) return null;
@@ -458,7 +459,7 @@ public class Jogger {
 	}
 
 	/* method that search log files in the directory */
-	private ArrayList<String> getLogfiles(File logDir, String regex) {
+	private List<String> getLogfiles(File logDir, String regex) {
 		ArrayList<String> logFiles = new ArrayList<String>();
 
 		/* list the file in the directory */
@@ -470,7 +471,7 @@ public class Jogger {
 	}
 
 	/* method that get a log file to work on */
-	private File getLogFileToWork(ArrayList<String> logFileList, String pathDirLog, String regex, String fileNameLog) throws LogFileException {
+	private File getLogFileToWork(List<String> logFileList, String pathDirLog, String regex, String fileNameLog) throws LogFileException {
 		File logFile = null;
 		/* sort and reverse the array */
 		Collections.sort(logFileList);
