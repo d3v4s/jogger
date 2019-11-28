@@ -3,8 +3,8 @@ Logger for Java
 
 Jogger is a Java library to implements the logs on a application.
 
-Download [~~releases~~](https://github.com/d3v4s/jogger/releases)
-For more info read the [wiki](https://github.com/d3v4s/jogger/wiki)
+Download [~~releases~~](https://github.com/d3v4s/jogger/releases).  
+For more info read the [wiki](https://github.com/d3v4s/jogger/wiki).
 
 ## [Classes](https://github.com/d3v4s/jogger/wiki/Classes)
 
