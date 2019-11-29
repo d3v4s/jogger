@@ -1,5 +1,6 @@
-jogger/bin/
-jogger/test/
-jogger/.settings/*
+/jogger/bin/
+/jogger/.settings/*
+/jogger/version
+
 LICENSE
 README.md
